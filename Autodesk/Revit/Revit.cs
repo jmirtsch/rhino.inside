@@ -144,15 +144,22 @@ namespace RhinoInside.Revit
       );
 
       // Load all the gha installed under the %APPDATA%\Grasshopper\Libraries-Autodesk-Revit-20XX
+      //Load all the gha installed under ProgramData\Grasshopper\Libraries-Autodesk-Revit-20XX
       var schemeName = ApplicationUI.ControlledApplication.VersionName.Replace(' ', '-');
-      var revitAssemblyFolder = Grasshopper.Folders.DefaultAssemblyFolder.Substring(0, Grasshopper.Folders.DefaultAssemblyFolder.Length - 1) + '-' + schemeName;
-      var assemblyFolder = new DirectoryInfo(revitAssemblyFolder);
-      try
+      var revitAssemblyFolders = new List<string>() {
+        Grasshopper.Folders.DefaultAssemblyFolder.Substring(0, Grasshopper.Folders.DefaultAssemblyFolder.Length - 1) + '-' + schemeName,
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "Grasshopper", "Libraries" + '-' + schemeName) };
+
+      foreach (string revitAssemblyFolder in revitAssemblyFolders)
       {
-        foreach (var file in assemblyFolder.EnumerateFiles("*.gha"))
-          LoadGHAProc.Invoke(Instances.ComponentServer, new object[] { new GH_ExternalFile(file.FullName), false });
+        var assemblyFolder = new DirectoryInfo(revitAssemblyFolder);
+        try
+        {
+          foreach (var file in assemblyFolder.EnumerateFiles("*.gha"))
+            LoadGHAProc.Invoke(Instances.ComponentServer, new object[] { new GH_ExternalFile(file.FullName), false });
+        }
+        catch (System.IO.DirectoryNotFoundException) { }
       }
-      catch (System.IO.DirectoryNotFoundException) { }
 
       Instances.Settings.SetValue("Assemblies:COFF", bCoff);
 
